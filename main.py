@@ -35,7 +35,7 @@ class OAuthClient:
 	def addBookmark(self, bookmark):
 		self.http.request(self.add_url, method='POST', body=urllib.urlencode({
 			'url': bookmark['url'],
-			'title': bookmark['title']
+			'title': bookmark['title'].encode('utf-8')
 		})) 
 
 class Readability(OAuthClient):
@@ -78,7 +78,7 @@ class DeliciousLike:
 		return urls
 		
 	def addBookmark(self, bookmark):
-		params = urllib.urlencode({'url' : bookmark['url'], 'description' : bookmark['title']})
+		params = urllib.urlencode({'url' : bookmark['url'], 'description' : bookmark['title'].encode('utf-8')})
 		urllib2.urlopen(self.add_url + params)
 
 class PinBoard(DeliciousLike):
@@ -132,11 +132,3 @@ def buildInstapaper(config):
 	SECTION = 'Instapaper'
 	return Instapaper(config.get(SECTION, 'key'), config.get(SECTION, 'secret'), config.get(SECTION, 'user'), config.get(SECTION, 'password'))
 
-#o = buildReadability(config)
-#o = buildReadItLater(config)
-#o = buildPinBoard(config)
-#o = buildDelicious(config)
-#o = buildInstapaper(config)
-
-#print(o.getBookmarks())
-#o.addBookmark({'url' : 'http://test.com', 'title' : 'Testing again'})
