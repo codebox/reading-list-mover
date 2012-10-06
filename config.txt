@@ -12,6 +12,7 @@ key=
 [PinBoard]
 user=
 password=
+token=
 
 [Delicious]
 user=

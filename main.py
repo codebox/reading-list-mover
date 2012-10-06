@@ -88,6 +88,12 @@ class PinBoard(DeliciousLike):
         
         DeliciousLike.__init__(self, user, password)
 
+class PinBoard2(DeliciousLike):
+    def __init__(self, user, token):
+        auth_token = user + ':' + token
+        self.get_url  = 'https://api.pinboard.in/v1/posts/all?auth_token=' + auth_token
+        self.add_url  = 'https://api.pinboard.in/v1/posts/add?auth_token=' + auth_token + '&'
+
 class Delicious(DeliciousLike):
     def __init__(self, user, password):
         self.get_url  = 'https://api.del.icio.us/v1/posts/all'
@@ -108,7 +114,6 @@ class Pocket:
         add_args=urllib.urlencode({'url' : bookmark['url']})
         urllib2.urlopen('https://readitlaterlist.com/v2/add?' + self.base_args + '&' + add_args)
 
-
 config = ConfigParser.RawConfigParser()
 config.read('config.txt')
 
@@ -123,6 +128,10 @@ def buildPocket():
 def buildPinBoard():
     SECTION = 'PinBoard'
     return PinBoard(config.get(SECTION, 'user'), config.get(SECTION, 'password'))
+
+def buildPinBoard2():
+    SECTION = 'PinBoard'
+    return PinBoard(config.get(SECTION, 'user'), config.get(SECTION, 'token'))
 
 def buildDelicious():
     SECTION = 'Delicious'
