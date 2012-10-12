@@ -37,8 +37,6 @@ for b in delicious.getBookmarks():
     print b['title'] + ': ' + b['url']
 ```
 
-This library is open source and available on [GitHub][source].
-
 [source]: https://github.com/codebox/reading-list-mover
 [Instapaper]: http://www.instapaper.com/
 [Readability]: https://www.readability.com/
