@@ -55,19 +55,49 @@ class Instapaper(OAuthClient):
         OAuthClient.__init__(self, key, secret, user, password)
         
     def getBookmarks(self):
+        '''
+        The ability to export bookmarks from Instapaper is reserved for users with Subscription accounts, if you have
+        such an account and wish to enable this feature just delete this function
+        '''
         raise Exception('Not supported')
-        
-class DeliciousLike:
+
+class HttpAuthClient:
     def __init__(self, user, password):
         passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
         passman.add_password(None, self.get_url, user, password)
         passman.add_password(None, self.add_url, user, password)
         authhandler = urllib2.HTTPBasicAuthHandler(passman)
-        opener = urllib2.build_opener(authhandler)
-        urllib2.install_opener(opener)
+        self.url_opener = urllib2.build_opener(authhandler)
+
+    def open(self, url, data=None):
+        return self.url_opener.open(url, data)
+
+class Diigo(HttpAuthClient):
+    def __init__(self, user, password, key):
+        self.get_url  = 'https://secure.diigo.com/api/v2/bookmarks?key=' + key + '&user=' + user
+        self.add_url  = 'https://secure.diigo.com/api/v2/bookmarks'
+        self.key = key
+        HttpAuthClient.__init__(self, user, password)
 
     def getBookmarks(self):
-        xml = urllib2.urlopen(self.get_url).read()
+        data = json.load(self.open(self.get_url))
+        return [{'url' : b['url'], 'title' : b['title']} for b in data]
+
+    def addBookmark(self, bookmark):
+        add_args=urllib.urlencode({'url' : bookmark['url'], 'title' : bookmark['title'], 'key' : self.key, 'shared' : 'yes'})
+        self.open(self.add_url, add_args)
+        '''
+        During testing the Diigo service sometimes returned a '500 Server error' when adding lots of bookmarks in rapid succession, adding
+        a brief pause between 'add' operations seemed to fix it - YMMV
+        time.sleep(1) 
+        '''
+
+class DeliciousLike(HttpAuthClient):
+    def __init__(self, user, password):
+        HttpAuthClient.__init__(self, user, password)
+
+    def getBookmarks(self):
+        xml = self.open(self.get_url).read()
         dom = parseString(xml)
         
         urls = []
@@ -79,7 +109,7 @@ class DeliciousLike:
         
     def addBookmark(self, bookmark):
         params = urllib.urlencode({'url' : bookmark['url'], 'description' : bookmark['title'].encode('utf-8')})
-        urllib2.urlopen(self.add_url + params)
+        self.open(self.add_url + params)
 
 class PinBoard(DeliciousLike):
     def __init__(self, user, password):
@@ -94,6 +124,9 @@ class PinBoard2(DeliciousLike):
         self.get_url  = 'https://api.pinboard.in/v1/posts/all?auth_token=' + auth_token
         self.add_url  = 'https://api.pinboard.in/v1/posts/add?auth_token=' + auth_token + '&'
 
+    def open(self, url, data=None):
+        return urllib2.urlopen(url, data)
+
 class Delicious(DeliciousLike):
     def __init__(self, user, password):
         self.get_url  = 'https://api.del.icio.us/v1/posts/all'
@@ -103,16 +136,18 @@ class Delicious(DeliciousLike):
         
 class Pocket:
     def __init__(self, user, password, key):
-        self.base_args=urllib.urlencode({'username' : user, 'password' : password, 'apikey' : key})
-        
+        base_args=urllib.urlencode({'username' : user, 'password' : password, 'apikey' : key})
+        self.get_url = 'https://readitlaterlist.com/v2/get?' + base_args + '&'
+        self.add_url = 'https://readitlaterlist.com/v2/add?' + base_args + '&' 
+
     def getBookmarks(self):
         get_args=urllib.urlencode({'state' : 'unread'})
-        data = json.load(urllib2.urlopen('https://readitlaterlist.com/v2/get?' + self.base_args + '&' + get_args))
+        data = json.load(urllib2.urlopen(self.get_url + get_args))
         return [{'url' : b['url'], 'title' : b['title']} for b in data['list'].values()]
         
     def addBookmark(self, bookmark):
         add_args=urllib.urlencode({'url' : bookmark['url']})
-        urllib2.urlopen('https://readitlaterlist.com/v2/add?' + self.base_args + '&' + add_args)
+        urllib2.urlopen(self.add_url + add_args)
 
 config = ConfigParser.RawConfigParser()
 config.read('config.txt')
@@ -131,7 +166,7 @@ def buildPinBoard():
 
 def buildPinBoard2():
     SECTION = 'PinBoard'
-    return PinBoard(config.get(SECTION, 'user'), config.get(SECTION, 'token'))
+    return PinBoard2(config.get(SECTION, 'user'), config.get(SECTION, 'token'))
 
 def buildDelicious():
     SECTION = 'Delicious'
@@ -140,4 +175,8 @@ def buildDelicious():
 def buildInstapaper():
     SECTION = 'Instapaper'
     return Instapaper(config.get(SECTION, 'key'), config.get(SECTION, 'secret'), config.get(SECTION, 'user'), config.get(SECTION, 'password'))
+
+def buildDiigo():
+    SECTION = 'Diigo'
+    return Diigo(config.get(SECTION, 'user'), config.get(SECTION, 'password'), config.get(SECTION, 'key'))
 

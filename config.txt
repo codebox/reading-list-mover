@@ -23,3 +23,8 @@ user=
 password=
 key=
 secret=
+
+[Diigo]
+user=
+password=
+key=
