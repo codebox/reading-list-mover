@@ -8,6 +8,8 @@ from xml.dom.minidom import parseString
 import xml.dom.minidom
 import oauth2
 import ConfigParser
+from StringIO import StringIO
+import gzip
 
 class OAuthClient:
     def __init__(self, key, secret, user, password):
@@ -71,6 +73,47 @@ class HttpAuthClient:
 
     def open(self, url, data=None):
         return self.url_opener.open(url, data)
+
+class StackOverflow:
+    def __init__(self, user):
+        self.get_url  = 'http://api.stackexchange.com/2.1/users/' + user + '/favorites?order=desc&sort=activity&site=stackoverflow'
+
+    def getBookmarks(self):
+        rsp = urllib2.urlopen(self.get_url)
+        if rsp.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO(rsp.read())
+            rsp = gzip.GzipFile(fileobj=buf)
+
+        data = json.load(rsp)
+        return [{'url' : b['link'], 'title' : b['title']} for b in data['items']]
+
+    def addBookmark(self, bookmark):
+        raise Exception('Not supported')
+
+class Github:
+    def __init__(self, user):
+        self.get_url  = 'https://api.github.com/users/' + user + '/starred'
+
+    def getBookmarks(self):
+        rsp = urllib2.urlopen(self.get_url)
+        data = json.load(rsp)
+        return [{'url' : b['url'], 'title' : b['name']} for b in data]
+
+    def addBookmark(self, bookmark):
+        raise Exception('Not supported')
+
+class Twitter:
+    def __init__(self, user):
+        self.user = user
+        self.get_url  = 'https://api.twitter.com/1/favorites.json?count=200&screen_name=' + user
+
+    def getBookmarks(self):
+        rsp = urllib2.urlopen(self.get_url)
+        data = json.load(rsp)
+        return [{'url' : 'http://twitter.com/' + self.user + '/status/' + b['id_str'], 'title' : b['text']} for b in data]
+
+    def addBookmark(self, bookmark):
+        raise Exception('Not supported')
 
 class Diigo(HttpAuthClient):
     def __init__(self, user, password, key):
@@ -179,4 +222,16 @@ def buildInstapaper():
 def buildDiigo():
     SECTION = 'Diigo'
     return Diigo(config.get(SECTION, 'user'), config.get(SECTION, 'password'), config.get(SECTION, 'key'))
+
+def buildStackOverflow():
+    SECTION = 'StackOverflow'
+    return StackOverflow(config.get(SECTION, 'user'))
+
+def buildGithub():
+    SECTION = 'Github'
+    return Github(config.get(SECTION, 'user'))
+
+def buildTwitter():
+    SECTION = 'Twitter'
+    return Twitter(config.get(SECTION, 'user'))
 

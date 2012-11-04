@@ -28,3 +28,13 @@ secret=
 user=
 password=
 key=
+
+[StackOverflow]
+# user is the numberic value that appears in the url when you view your profile page, eg '12345' in http://stackoverflow.com/users/12345/ironman
+user=
+
+[Github]
+user=
+
+[Twitter]
+user=
