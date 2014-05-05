@@ -1,15 +1,15 @@
-import sys
+import os
 import json
 import urllib
 import urllib2
 import urlparse
 import simplejson
 from xml.dom.minidom import parseString
-import xml.dom.minidom
 import oauth2
 import ConfigParser
 from StringIO import StringIO
 import gzip
+from HTMLParser import HTMLParser
 
 class OAuthClient:
     def __init__(self, key, secret, user, password):
@@ -199,6 +199,50 @@ class Pocket:
         add_args=urllib.urlencode({'url' : bookmark['url']})
         urllib2.urlopen(self.add_url + add_args)
 
+class BrowserBookmarksParser(HTMLParser):
+    def __init__(self, bookmarks):
+        self.currentBookmark = None
+        self.bookmarks = bookmarks
+        HTMLParser.__init__(self)
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            self.currentBookmark = {'url' : filter(lambda a: a[0]=='href', attrs)[0][1], 'title' : ''}
+
+    def handle_endtag(self, tag):
+        if tag == 'a':
+            self.bookmarks.append(self.currentBookmark)
+            self.currentBookmark = None
+
+    def handle_data(self, data):
+        if self.currentBookmark != None:
+            self.currentBookmark['title'] += data
+
+    def handle_charref(self, name):
+        if self.currentBookmark != None:
+            self.currentBookmark['title'] += chr(int(name[1:], 16 if name[0] == 'x' else 10))
+
+    def handle_entityref(self, name):
+        if self.currentBookmark != None:
+            self.currentBookmark['title'] += self.unescape('&' + name + ';')
+
+class BrowserBookmarks:
+    def __init__(self, file_name):
+        self.file_name = file_name
+        self.txt = open(file_name, 'r').read()
+        
+    def getBookmarks(self):
+        bookmarks = []
+        parser = BrowserBookmarksParser(bookmarks)
+        parser.feed(self.txt)
+        return bookmarks
+
+    def addBookmark(self, bookmark):
+        pos = self.txt.rfind("</DL>")
+        bookmark_txt = '\n    <DT><A HREF="{0}" ADD_DATE="{1}">{2}</A>\n'.format(bookmark['url'], '123', bookmark['title'])
+        self.txt = self.txt[:pos] + bookmark_txt + self.txt[pos:]
+        open(self.file_name, 'w').write(self.txt)
+
 config = ConfigParser.RawConfigParser()
 config.read('config.txt')
 
@@ -241,3 +285,7 @@ def buildGithub():
 def buildTwitter():
     SECTION = 'Twitter'
     return Twitter(config.get(SECTION, 'user'), config.get(SECTION, 'api_key'), config.get(SECTION, 'api_secret'), config.get(SECTION, 'access_token'), config.get(SECTION, 'access_token_secret'))
+
+def buildBrowserBookmarks():
+    SECTION = 'BrowserBookmarks'
+    return BrowserBookmarks(config.get(SECTION, 'file'))
