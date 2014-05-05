@@ -103,15 +103,22 @@ class Github:
         raise Exception('Not supported')
 
 class Twitter:
-    def __init__(self, user):
-        self.user = user
-        self.get_url  = 'https://api.twitter.com/1/favorites.json?count=200&screen_name=' + user
+    def __init__(self, user, api_key, api_secret, access_token, access_token_secret):
+        self.get_url          = "https://api.twitter.com/1.1/favorites/list.json?screen_name=" + user
+        self.tweet_url_prefix = "https://twitter.com/" + user + "/status/"
+        consumer  = oauth2.Consumer(api_key, api_secret)
+        token     = oauth2.Token(access_token, access_token_secret)
+        self.http = oauth2.Client(consumer, token)
 
     def getBookmarks(self):
-        rsp = urllib2.urlopen(self.get_url)
-        data = json.load(rsp)
-        return [{'url' : 'http://twitter.com/' + self.user + '/status/' + b['id_str'], 'title' : b['text']} for b in data]
-
+        response, data = self.http.request(self.get_url, method='GET') 
+        bookmarks = []
+        
+        for b in simplejson.loads(data):
+            bookmarks.append({'url' : self.tweet_url_prefix + b['id_str'], 'title' : b['text']})
+            
+        return bookmarks
+        
     def addBookmark(self, bookmark):
         raise Exception('Not supported')
 
@@ -233,5 +240,4 @@ def buildGithub():
 
 def buildTwitter():
     SECTION = 'Twitter'
-    return Twitter(config.get(SECTION, 'user'))
-
+    return Twitter(config.get(SECTION, 'user'), config.get(SECTION, 'api_key'), config.get(SECTION, 'api_secret'), config.get(SECTION, 'access_token'), config.get(SECTION, 'access_token_secret'))
