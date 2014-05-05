@@ -2,7 +2,7 @@
 
 Copy bookmarks between Instapaper, Readability, Pocket, Pinboard, Delicious, Diigo, GitHub, StackOverflow and Twitter.
 
-Here's a small Python library to copy bookmarks/favourites between a number of online services. The library supports [Instapaper](http://www.instapaper.com/), [Readability](https://www.readability.com/), [Pocket](http://getpocket.com/) (formerly ReadItLater), [Pinboard](http://pinboard.in/), [Delicious](http://delicious.com/), [Diigo](http://diigo.com/), [GitHub](http://github.com/)*, [StackOverflow](http://stackoverflow.com/)* and [Twitter](http://twitter.com/)* ('*' indicates export only).
+Here's a small Python library to copy bookmarks/favourites between a number of online services. The library supports [Instapaper](http://www.instapaper.com/), [Readability](https://www.readability.com/), [Pocket](http://getpocket.com/) (formerly ReadItLater), [Pinboard](http://pinboard.in/), [Delicious](http://delicious.com/), [Diigo](http://diigo.com/), [GitHub](http://github.com/)\*, [StackOverflow](http://stackoverflow.com/)\* and [Twitter](http://twitter.com/)\* ('\*' indicates export only).
 
 To use the library you will need to populate your copy of the [config.txt](https://github.com/codebox/reading-list-mover/blob/master/config.txt) file with the details of your accounts on the services that you are going to use. In the case of Readability, Pocket, Instapaper, Diigo and Twitter you will also need to apply for an API key:
 
